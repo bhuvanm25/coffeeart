@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <title>Bhuvan's Latte Arts</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+
   <style>
     :root {
       --bg: #050611;
@@ -11,7 +12,11 @@
       --text: #f5f5f5;
       --muted: #a0a3b1;
     }
-    * { box-sizing: border-box; }
+
+    * {
+      box-sizing: border-box;
+    }
+
     body {
       margin: 0;
       padding: 24px;
@@ -19,23 +24,32 @@
       color: var(--text);
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
+
+    h1 {
+      margin: 0 0 24px;
+      font-size: 32px;
+    }
+
     .grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
       gap: 16px;
     }
+
     .card {
       background: var(--card);
       border-radius: 16px;
       overflow: hidden;
       box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
     }
+
     .card img {
       display: block;
       width: 100%;
-      height: auto;     /* 👈 keeps original aspect ratio */
+      height: auto;
       border-radius: 12px 12px 0 0;
     }
+
     .empty {
       margin-top: 24px;
       font-size: 14px;
@@ -43,56 +57,49 @@
     }
   </style>
 </head>
+
 <body>
+  <h1>Bhuvan's Latte Arts</h1>
+
   <div id="gallery" class="grid"></div>
-  <div id="empty" class="empty" style="display:none;">No images found yet.</div>
+  <div id="empty" class="empty" style="display:none;">Loading images...</div>
 
   <script>
-    const OWNER       = 'bhuvanm25';
-    const REPO        = 'photo-gallery';
-    const BRANCH      = 'main';
-    const FOLDER_PATH = 'images';
+    const gallery = document.getElementById("gallery");
+    const emptyMsg = document.getElementById("empty");
 
-    const apiUrl = `https://api.github.com/repos/${OWNER}/${REPO}/contents/${FOLDER_PATH}?ref=${BRANCH}`;
-    const exts = ['.png', '.jpg', '.jpeg', '.gif', '.webp'];
+    emptyMsg.style.display = "block";
 
-    function isImage(name) {
-      const lower = name.toLowerCase();
-      return exts.some(ext => lower.endsWith(ext));
-    }
-
-    fetch(apiUrl)
+    fetch("/api/images")
       .then(res => res.json())
-      .then(files => {
-        if (!Array.isArray(files)) {
-          document.getElementById('empty').textContent = 'Error loading images.';
-          document.getElementById('empty').style.display = 'block';
+      .then(images => {
+        gallery.innerHTML = "";
+
+        if (!Array.isArray(images) || images.length === 0) {
+          emptyMsg.textContent = "No images found yet.";
+          emptyMsg.style.display = "block";
           return;
         }
 
-        const images = files.filter(f => f.type === 'file' && isImage(f.name));
-        const gallery = document.getElementById('gallery');
-        const emptyMsg = document.getElementById('empty');
-
-        if (images.length === 0) {
-          emptyMsg.style.display = 'block';
-          return;
-        }
+        emptyMsg.style.display = "none";
 
         images.forEach(file => {
-          const imgUrl = `https://raw.githubusercontent.com/${OWNER}/${REPO}/${BRANCH}/${FOLDER_PATH}/${encodeURIComponent(file.name)}`;
+          const card = document.createElement("div");
+          card.className = "card";
 
-          const card = document.createElement('div');
-          card.className = 'card';
-
-          const img = document.createElement('img');
-          img.src = imgUrl;
-          img.alt = "photo";
+          const img = document.createElement("img");
+          img.src = file.url;
+          img.alt = file.name || "Latte art photo";
           img.loading = "lazy";
-          card.appendChild(img);
 
+          card.appendChild(img);
           gallery.appendChild(card);
         });
+      })
+      .catch(err => {
+        console.error(err);
+        emptyMsg.textContent = "Error loading images.";
+        emptyMsg.style.display = "block";
       });
   </script>
 </body>
