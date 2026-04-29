@@ -13,9 +13,7 @@
       --muted: #a0a3b1;
     }
 
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
     body {
       margin: 0;
@@ -26,8 +24,7 @@
     }
 
     h1 {
-      margin: 0 0 24px;
-      font-size: 32px;
+      margin-bottom: 24px;
     }
 
     .grid {
@@ -47,7 +44,6 @@
       display: block;
       width: 100%;
       height: auto;
-      border-radius: 12px 12px 0 0;
     }
 
     .empty {
@@ -65,31 +61,50 @@
   <div id="empty" class="empty" style="display:none;">Loading images...</div>
 
   <script>
+    const OWNER = 'bhuvanm25';
+    const REPO = 'photo-gallery';
+    const BRANCH = 'main';
+    const FOLDER_PATH = 'images';
+
+    const apiUrl = `https://api.github.com/repos/${OWNER}/${REPO}/contents/${FOLDER_PATH}?ref=${BRANCH}`;
+    const exts = ['.png', '.jpg', '.jpeg', '.gif', '.webp'];
+
+    function isImage(name) {
+      const lower = name.toLowerCase();
+      return exts.some(ext => lower.endsWith(ext));
+    }
+
     const gallery = document.getElementById("gallery");
     const emptyMsg = document.getElementById("empty");
 
     emptyMsg.style.display = "block";
 
-    fetch("/api/images")
+    fetch(apiUrl)
       .then(res => res.json())
-      .then(images => {
-        gallery.innerHTML = "";
+      .then(files => {
+        if (!Array.isArray(files)) {
+          emptyMsg.textContent = "Error loading images.";
+          return;
+        }
 
-        if (!Array.isArray(images) || images.length === 0) {
+        const images = files.filter(f => f.type === 'file' && isImage(f.name));
+
+        if (images.length === 0) {
           emptyMsg.textContent = "No images found yet.";
-          emptyMsg.style.display = "block";
           return;
         }
 
         emptyMsg.style.display = "none";
 
         images.forEach(file => {
-          const card = document.createElement("div");
-          card.className = "card";
+          const imgUrl = `https://raw.githubusercontent.com/${OWNER}/${REPO}/${BRANCH}/${FOLDER_PATH}/${encodeURIComponent(file.name)}`;
 
-          const img = document.createElement("img");
-          img.src = file.url;
-          img.alt = file.name || "Latte art photo";
+          const card = document.createElement('div');
+          card.className = 'card';
+
+          const img = document.createElement('img');
+          img.src = imgUrl;
+          img.alt = file.name;
           img.loading = "lazy";
 
           card.appendChild(img);
@@ -99,7 +114,6 @@
       .catch(err => {
         console.error(err);
         emptyMsg.textContent = "Error loading images.";
-        emptyMsg.style.display = "block";
       });
   </script>
 </body>
